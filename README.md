@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlowForge
 
-## Getting Started
+> A modern visual workflow automation platform that allows users to build, manage, and automate complex processes using a powerful drag-and-drop interface.
 
-First, run the development server:
+![FlowForge Preview](./preview.png)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Overview
+
+FlowForge is a node-based workflow builder designed to simplify process automation. Users can create powerful workflows by connecting triggers, actions, and conditions without writing code.
+
+The goal of this project is to build a production-ready automation experience while exploring advanced frontend architecture, complex state management, and interactive user interfaces.
+
+---
+
+## ✨ Features
+
+* 🎨 Visual drag & drop workflow builder
+* 🔗 Connect nodes to create automation flows
+* ⚡ Custom workflow triggers and actions
+* 🧩 Dynamic node configuration
+* 🧠 Smart workflow validation
+* 💾 Save and manage workflows
+* 📊 Execution history and analytics
+* 📚 Workflow templates
+* 📤 Import / Export workflows
+* 🌙 Modern responsive UI
+
+---
+
+## 🛠 Tech Stack
+
+* **Framework:** Next.js
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS
+* **UI Components:** shadcn/ui
+* **Workflow Engine UI:** React Flow
+* **State Management:** Zustand
+* **Forms:** React Hook Form + Zod
+* **Data Fetching:** TanStack Query
+
+---
+
+## 🏗 Architecture
+
+The application is built around a node-based architecture where every workflow consists of:
+
+```
+Trigger
+   ↓
+Action
+   ↓
+Condition
+   ↓
+Action
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Each node contains its own configuration and can communicate with other nodes through workflow connections.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🎯 Project Goals
 
-## Learn More
+This project focuses on building a real-world SaaS-style application and demonstrating:
 
-To learn more about Next.js, take a look at the following resources:
+* Advanced React patterns
+* Complex state management
+* Interactive UI development
+* Scalable component architecture
+* Modern frontend best practices
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📌 Future Improvements
 
-## Deploy on Vercel
+* Real workflow execution engine
+* User authentication
+* Team collaboration
+* Real-time workflow editing
+* More integrations (Slack, Email, Webhooks)
+* Database persistence
+* Role-based permissions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 👨‍💻 Author
+
+**Masoud Jafari**
+
+Frontend Developer
