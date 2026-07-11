@@ -1,3 +1,4 @@
+import Banner from "./components/Banners";
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
 import Testimonials from "./components/PlayersComment";
@@ -11,9 +12,10 @@ export default function EscapeRoomsPage() {
       <Hero />
       <SearchBar />
       <RoomCards />
-      <Testimonials/>
+      <Testimonials />
       <RoomCards />
-
+      <Banner />
+      <RoomCards />
     </div>
   );
 }
