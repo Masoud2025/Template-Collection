@@ -1,13 +1,12 @@
+import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
 
 export default function EscapeRoomsPage() {
   return (
-    <>
-      <div className="min-h-screen bg-[#f8f6f0] pt-20 p-6">
+      <div className="flex flex-col">
       <Navbar />
+      <Hero/>
       <br />
-      <h1 className="moraba-Font">سلام گل بانو</h1>
       </div>
-    </>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import Logo from "../public/images/Logo.png";
+import Logo from "../assets/images/Logo.png";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
