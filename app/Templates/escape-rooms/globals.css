@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@layer base {
+  @font-face {
+    font-family: 'Anjoman';
+    src: url('/fonts/Anjoman/Anjoman-Black/fonts/Anjoman-Black.ttf') format('ttf');
+    font-weight: 400;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Morabba';
+    src: url('/fonts/Morabba/ttf/Morabba-ExtraBold.ttf') format('woff2');
+    font-weight: 900;
+    font-display: swap;
+  }
+
+  /* body {
+    font-family: 'Anjoman', -apple-system, BlinkMacSystemFont, sans-serif;
+  } */
+  .navbar{
+    font-family: 'Anjoman', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  }
+  .moraba-Font{
+    font-family: 'Morabba';
+
+  }
+}

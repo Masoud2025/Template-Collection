@@ -5,6 +5,8 @@ export default function EscapeRoomsPage() {
     <>
       <div className="min-h-screen bg-[#f8f6f0] pt-20 p-6">
       <Navbar />
+      <br />
+      <h1 className="moraba-Font">سلام گل بانو</h1>
       </div>
     </>
   );
