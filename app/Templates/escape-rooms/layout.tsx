@@ -3,5 +3,9 @@ export default function EscapeRoomsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <div dir="rtl" className="bg-[#f0f4f8] dark:bg-black min-h-screen">
+      {children}
+    </div>
+  );
 }
