@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Footer from "./components/Footer";
 
 export const metadata: Metadata = {
   title: "Escape Rooms",
@@ -22,6 +23,7 @@ export default function EscapeRoomsLayout({
       </head>
       <body className="font-vazir bg-[#f0f4f8] text-black antialiased">
         {children}
+        <Footer/>
       </body>
     </html>
   );

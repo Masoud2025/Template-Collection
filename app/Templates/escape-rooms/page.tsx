@@ -1,5 +1,6 @@
 import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
+import RoomCards from "./components/RoomCards";
 import SearchBar from "./components/SearchBar";
 
 export default function EscapeRoomsPage() {
@@ -8,6 +9,7 @@ export default function EscapeRoomsPage() {
       <Navbar />
       <Hero />
       <SearchBar />
+      <RoomCards />
     </div>
   );
 }
