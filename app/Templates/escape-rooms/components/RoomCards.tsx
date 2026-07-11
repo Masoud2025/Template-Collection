@@ -197,7 +197,7 @@ export default function RoomCards() {
   };
 
   return (
-    <section className="w-full bg-gray-50 py-16 px-4" id="rooms">
+    <section className="w-full bg-gray-50 py-16 px-4 moraba-Font" id="rooms">
       <div className="max-w-7xl mx-auto">
         {/* Header with Navigation */}
         <div className="flex items-center justify-between mb-8">
