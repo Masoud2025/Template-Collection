@@ -8,12 +8,14 @@ interface JumpScareProps {
   autoTrigger?: boolean;
 }
 
+// تعریف type برای WebKit AudioContext
+type AudioContextType = typeof AudioContext;
+
 export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: JumpScareProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [hasTriggered, setHasTriggered] = useState(false);
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Load sound file
@@ -32,88 +34,26 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
     };
   }, []);
 
-  // Detect user interaction
-  useEffect(() => {
-    const handleInteraction = () => {
-      console.log("👆 User interacted with page!");
-      setHasUserInteracted(true);
-      
-      // Resume audio context if needed
-      if (audioRef.current) {
-        try {
-          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-          const ctx = new AudioContextClass();
-          if (ctx.state === "suspended") {
-            ctx.resume();
-          }
-        } catch (e) {}
-      }
-      
-      // Remove listeners after first interaction
-      window.removeEventListener("click", handleInteraction);
-      window.removeEventListener("touchstart", handleInteraction);
-    };
-
-    window.addEventListener("click", handleInteraction);
-    window.addEventListener("touchstart", handleInteraction);
-
-    return () => {
-      window.removeEventListener("click", handleInteraction);
-      window.removeEventListener("touchstart", handleInteraction);
-    };
-  }, []);
-
-  // Play scare sound from file
-  const playSound = useCallback(() => {
-    if (isMuted) {
-      console.log("🔇 Sound is muted");
-      return;
-    }
-    
-    console.log("🔊 Playing jumpscare sound from file...");
-    
+  // Get AudioContext safely
+  const getAudioContext = useCallback((): AudioContext | null => {
     try {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        
-        const playPromise = audioRef.current.play();
-        
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log("✅ Sound played successfully from file!");
-            })
-            .catch((error) => {
-              console.error("❌ Playback failed:", error);
-              // If user hasn't interacted, show a message or use fallback
-              if (error.name === "NotAllowedError") {
-                console.log("⚠️ User must interact with page first");
-                // Try to play after a short delay with a click simulation
-                setTimeout(() => {
-                  if (audioRef.current) {
-                    audioRef.current.play().catch(() => {});
-                  }
-                }, 100);
-              }
-              fallbackSound();
-            });
-        }
-      } else {
-        console.log("⚠️ Audio element not available, using fallback");
-        fallbackSound();
-      }
-    } catch (error) {
-      console.error("❌ Sound error:", error);
-      fallbackSound();
+      const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return null;
+      return new AudioContextClass();
+    } catch {
+      return null;
     }
-  }, [isMuted]);
+  }, []);
 
   // Fallback sound using Web Audio API
   const fallbackSound = useCallback(() => {
     console.log("🎵 Using Web Audio fallback...");
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioContextClass();
+      const ctx = getAudioContext();
+      if (!ctx) {
+        console.log("❌ Web Audio not supported");
+        return;
+      }
       
       if (ctx.state === "suspended") {
         console.log("⏸️ AudioContext suspended, trying to resume...");
@@ -152,7 +92,50 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
     } catch (error) {
       console.error("❌ Fallback sound failed:", error);
     }
-  }, []);
+  }, [getAudioContext]);
+
+  // Play scare sound from file
+  const playSound = useCallback(() => {
+    if (isMuted) {
+      console.log("🔇 Sound is muted");
+      return;
+    }
+    
+    console.log("🔊 Playing jumpscare sound from file...");
+    
+    try {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("✅ Sound played successfully from file!");
+            })
+            .catch((error) => {
+              console.error("❌ Playback failed:", error);
+              if (error.name === "NotAllowedError") {
+                console.log("⚠️ User must interact with page first");
+                setTimeout(() => {
+                  if (audioRef.current) {
+                    audioRef.current.play().catch(() => {});
+                  }
+                }, 100);
+              }
+              fallbackSound();
+            });
+        }
+      } else {
+        console.log("⚠️ Audio element not available, using fallback");
+        fallbackSound();
+      }
+    } catch (error) {
+      console.error("❌ Sound error:", error);
+      fallbackSound();
+    }
+  }, [isMuted, fallbackSound]);
 
   // Trigger the jumpscare
   const triggerScare = useCallback(() => {
@@ -164,12 +147,10 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
     setIsVisible(true);
     setHasTriggered(true);
 
-    // Play sound with a slight delay to ensure DOM is ready
     setTimeout(() => {
       playSound();
     }, 50);
 
-    // Flash effect
     const flashEl = document.createElement("div");
     flashEl.style.cssText = `
       position: fixed;
@@ -186,12 +167,36 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
       setTimeout(() => flashEl.remove(), 200);
     }, 150);
 
-    // Hide after 2.5 seconds
     setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => setIsActive(false), 500);
     }, 2500);
   }, [isActive, hasTriggered, playSound]);
+
+  // Detect user interaction
+  useEffect(() => {
+    const handleInteraction = () => {
+      console.log("👆 User interacted with page!");
+      
+      try {
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === "suspended") {
+          ctx.resume();
+        }
+      } catch (e) {}
+      
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
+    };
+
+    window.addEventListener("click", handleInteraction);
+    window.addEventListener("touchstart", handleInteraction);
+
+    return () => {
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
+    };
+  }, [getAudioContext]);
 
   // Listen for first scroll
   useEffect(() => {
@@ -263,7 +268,6 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
 
   return (
     <>
-      {/* دکمه تست */}
       <button
         onClick={handleManualTrigger}
         className="fixed bottom-6 left-6 z-50 px-4 py-2 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-800 hover:to-red-950 text-white rounded-full text-sm font-bold shadow-2xl transition-all duration-300 hover:scale-110 flex items-center gap-2 border-2 border-red-500/50"
@@ -272,7 +276,6 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
         تست ترس
       </button>
 
-      {/* دکمه صدا */}
       <button
         onClick={() => {
           console.log(`🔊 Sound ${isMuted ? "unmuted" : "muted"}`);
@@ -283,7 +286,6 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
         {isMuted ? <VolumeX size={18} className="text-red-400" /> : <Volume2 size={18} className="text-green-400" />}
       </button>
 
-      {/* پس‌زمینه تاریک با نور قرمز */}
       <div
         className={`fixed inset-0 z-[100] transition-all duration-300 ${
           isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -294,7 +296,6 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
         }}
       />
 
-      {/* سایه گوشه‌ها */}
       <div
         className={`fixed inset-0 z-[101] pointer-events-none transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
@@ -304,7 +305,6 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
         }}
       />
 
-      {/* محتوای ترسناک */}
       <div
         className={`fixed inset-0 z-[102] flex items-center justify-center transition-all duration-300 ${
           isVisible ? "scale-100 opacity-100" : "scale-75 opacity-0 pointer-events-none"
