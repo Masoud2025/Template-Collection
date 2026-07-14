@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { X, Ghost, Volume2, VolumeX, Skull } from "lucide-react";
 
 interface JumpScareProps {
@@ -13,63 +13,161 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
   const [isActive, setIsActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [hasTriggered, setHasTriggered] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Play scare sound
+  // Load sound file
+  useEffect(() => {
+    const audio = new Audio("/sounds/jumpscare.mp3");
+    audio.preload = "auto";
+    audio.volume = 0.8;
+    audioRef.current = audio;
+    console.log("🔊 Sound file loaded:", audio.src);
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Detect user interaction
+  useEffect(() => {
+    const handleInteraction = () => {
+      console.log("👆 User interacted with page!");
+      setHasUserInteracted(true);
+      
+      // Resume audio context if needed
+      if (audioRef.current) {
+        try {
+          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          const ctx = new AudioContextClass();
+          if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+        } catch (e) {}
+      }
+      
+      // Remove listeners after first interaction
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
+    };
+
+    window.addEventListener("click", handleInteraction);
+    window.addEventListener("touchstart", handleInteraction);
+
+    return () => {
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
+    };
+  }, []);
+
+  // Play scare sound from file
   const playSound = useCallback(() => {
-    if (isMuted) return;
+    if (isMuted) {
+      console.log("🔇 Sound is muted");
+      return;
+    }
+    
+    console.log("🔊 Playing jumpscare sound from file...");
     
     try {
-      // Create audio context for better compatibility
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // Create an oscillator for a scary sound effect
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      // Scary sound: low frequency with pitch bend
-      oscillator.type = "sawtooth";
-      oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(80, audioContext.currentTime + 0.5);
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.8);
-      
-      // Play a second sound for more scare
-      setTimeout(() => {
-        const osc2 = audioContext.createOscillator();
-        const gain2 = audioContext.createGain();
-        osc2.connect(gain2);
-        gain2.connect(audioContext.destination);
-        osc2.type = "square";
-        osc2.frequency.setValueAtTime(200, audioContext.currentTime);
-        osc2.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
-        gain2.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-        osc2.start(audioContext.currentTime);
-        osc2.stop(audioContext.currentTime + 0.4);
-      }, 200);
-      
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("✅ Sound played successfully from file!");
+            })
+            .catch((error) => {
+              console.error("❌ Playback failed:", error);
+              // If user hasn't interacted, show a message or use fallback
+              if (error.name === "NotAllowedError") {
+                console.log("⚠️ User must interact with page first");
+                // Try to play after a short delay with a click simulation
+                setTimeout(() => {
+                  if (audioRef.current) {
+                    audioRef.current.play().catch(() => {});
+                  }
+                }, 100);
+              }
+              fallbackSound();
+            });
+        }
+      } else {
+        console.log("⚠️ Audio element not available, using fallback");
+        fallbackSound();
+      }
     } catch (error) {
-      console.log("Sound not available");
+      console.error("❌ Sound error:", error);
+      fallbackSound();
     }
   }, [isMuted]);
+
+  // Fallback sound using Web Audio API
+  const fallbackSound = useCallback(() => {
+    console.log("🎵 Using Web Audio fallback...");
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContextClass();
+      
+      if (ctx.state === "suspended") {
+        console.log("⏸️ AudioContext suspended, trying to resume...");
+        ctx.resume();
+      }
+      
+      const now = ctx.currentTime;
+      
+      // Deep bass
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(150, now);
+      osc1.frequency.exponentialRampToValueAtTime(60, now + 0.6);
+      gain1.gain.setValueAtTime(0.4, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc1.start(now);
+      osc1.stop(now + 0.6);
+      
+      // Screech
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.type = "square";
+      osc2.frequency.setValueAtTime(800, now + 0.1);
+      osc2.frequency.exponentialRampToValueAtTime(200, now + 0.5);
+      gain2.gain.setValueAtTime(0.15, now + 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      osc2.start(now + 0.1);
+      osc2.stop(now + 0.5);
+      
+      console.log("✅ Fallback sound played!");
+    } catch (error) {
+      console.error("❌ Fallback sound failed:", error);
+    }
+  }, []);
 
   // Trigger the jumpscare
   const triggerScare = useCallback(() => {
     if (isActive || hasTriggered) return;
     
+    console.log("💀 Triggering jumpscare...");
+    
     setIsActive(true);
     setIsVisible(true);
     setHasTriggered(true);
 
-    // Play sound
-    playSound();
+    // Play sound with a slight delay to ensure DOM is ready
+    setTimeout(() => {
+      playSound();
+    }, 50);
 
     // Flash effect
     const flashEl = document.createElement("div");
@@ -99,21 +197,29 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
   useEffect(() => {
     if (!autoTrigger || hasTriggered) return;
 
-    const handleFirstScroll = () => {
+    const handleFirstInteraction = () => {
+      console.log("👆 User interaction detected!");
       triggerScare();
-      window.removeEventListener("scroll", handleFirstScroll);
-      window.removeEventListener("wheel", handleFirstScroll);
-      window.removeEventListener("touchmove", handleFirstScroll);
+      window.removeEventListener("scroll", handleFirstInteraction);
+      window.removeEventListener("wheel", handleFirstInteraction);
+      window.removeEventListener("touchmove", handleFirstInteraction);
+      window.removeEventListener("click", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
     };
 
-    window.addEventListener("scroll", handleFirstScroll, { once: true });
-    window.addEventListener("wheel", handleFirstScroll, { once: true });
-    window.addEventListener("touchmove", handleFirstScroll, { once: true });
+    window.addEventListener("scroll", handleFirstInteraction, { once: true });
+    window.addEventListener("wheel", handleFirstInteraction, { once: true });
+    window.addEventListener("touchmove", handleFirstInteraction, { once: true });
+    window.addEventListener("click", handleFirstInteraction, { once: true });
+    window.addEventListener("touchstart", handleFirstInteraction, { once: true });
 
     const timer = setTimeout(() => {
-      window.removeEventListener("scroll", handleFirstScroll);
-      window.removeEventListener("wheel", handleFirstScroll);
-      window.removeEventListener("touchmove", handleFirstScroll);
+      console.log("⏰ Fallback timer triggered!");
+      window.removeEventListener("scroll", handleFirstInteraction);
+      window.removeEventListener("wheel", handleFirstInteraction);
+      window.removeEventListener("touchmove", handleFirstInteraction);
+      window.removeEventListener("click", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
       
       if (!hasTriggered) {
         triggerScare();
@@ -121,9 +227,11 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
     }, 10000);
 
     return () => {
-      window.removeEventListener("scroll", handleFirstScroll);
-      window.removeEventListener("wheel", handleFirstScroll);
-      window.removeEventListener("touchmove", handleFirstScroll);
+      window.removeEventListener("scroll", handleFirstInteraction);
+      window.removeEventListener("wheel", handleFirstInteraction);
+      window.removeEventListener("touchmove", handleFirstInteraction);
+      window.removeEventListener("click", handleFirstInteraction);
+      window.removeEventListener("touchstart", handleFirstInteraction);
       clearTimeout(timer);
     };
   }, [autoTrigger, hasTriggered, triggerScare]);
@@ -141,6 +249,7 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
   }, [isVisible]);
 
   const handleManualTrigger = () => {
+    console.log("🎯 Manual trigger clicked!");
     if (isActive) return;
     triggerScare();
   };
@@ -165,7 +274,10 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
 
       {/* دکمه صدا */}
       <button
-        onClick={() => setIsMuted(!isMuted)}
+        onClick={() => {
+          console.log(`🔊 Sound ${isMuted ? "unmuted" : "muted"}`);
+          setIsMuted(!isMuted);
+        }}
         className="fixed bottom-6 left-36 z-50 w-10 h-10 bg-black/70 hover:bg-black/90 backdrop-blur-sm text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 border-red-500/30 hover:border-red-500/60"
       >
         {isMuted ? <VolumeX size={18} className="text-red-400" /> : <Volume2 size={18} className="text-green-400" />}
@@ -200,16 +312,13 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
       >
         <div className="relative max-w-3xl w-full mx-4">
           <div className="relative bg-gradient-to-b from-red-950/95 via-black/95 to-black/95 rounded-3xl overflow-hidden border-4 border-red-600/70 shadow-[0_0_150px_rgba(255,0,0,0.4)]">
-            {/* افکت پس‌زمینه */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,0,0,0.15)_0%,_transparent_70%)]" />
             
-            {/* افکت خون چکه‌کننده */}
             <div className="absolute top-0 left-1/4 w-1 h-20 bg-red-600/30 rounded-full animate-pulse" />
             <div className="absolute top-0 left-2/3 w-0.5 h-16 bg-red-600/20 rounded-full animate-pulse" style={{ animationDelay: "0.5s" }} />
             <div className="absolute top-0 left-1/2 w-0.5 h-24 bg-red-600/25 rounded-full animate-pulse" style={{ animationDelay: "1s" }} />
 
             <div className="relative p-8 md:p-12 text-center">
-              {/* آیکون ترسناک */}
               <div className="relative inline-block mb-6">
                 <div className="text-9xl md:text-[10rem] animate-pulse filter drop-shadow-[0_0_60px_rgba(255,0,0,0.5)]">
                   👻
@@ -217,7 +326,6 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-32 h-8 bg-red-600/20 blur-3xl rounded-full" />
               </div>
               
-              {/* عنوان اصلی */}
               <h2 className="relative text-5xl md:text-8xl font-black tracking-wider mb-3">
                 <span className="relative inline-block">
                   <span className="absolute inset-0 text-red-600 blur-sm animate-pulse">BOO!</span>
@@ -225,29 +333,24 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
                 </span>
               </h2>
               
-              {/* زیرنویس ترسناک */}
               <p className="text-red-300/80 text-lg md:text-xl font-medium mt-2 tracking-widest">
                 ⚰️ به دام افتادی ⚰️
               </p>
               
-              {/* خط تزئینی */}
               <div className="flex items-center justify-center gap-4 mt-6">
                 <div className="w-16 h-px bg-gradient-to-r from-transparent to-red-500/50" />
                 <span className="text-red-500/40 text-sm">💀</span>
                 <div className="w-16 h-px bg-gradient-to-l from-transparent to-red-500/50" />
               </div>
 
-              {/* متن شیطانی */}
               <p className="text-red-400/40 text-xs md:text-sm mt-4 tracking-[0.3em] font-mono">
                 👹 موهاهاهاها! 👹
               </p>
 
-              {/* خط پایین */}
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent animate-pulse" />
             </div>
           </div>
 
-          {/* دکمه بستن */}
           <button
             onClick={handleClose}
             className="absolute -top-4 -right-4 w-12 h-12 bg-black/90 hover:bg-black rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 border-2 border-red-600/50 hover:border-red-600 group"
@@ -257,7 +360,6 @@ export default function JumpScare({ triggerDelay = 5000, autoTrigger = true }: J
         </div>
       </div>
 
-      {/* انیمیشن‌ها */}
       <style jsx>{`
         @keyframes pulse {
           0%, 100% { 
