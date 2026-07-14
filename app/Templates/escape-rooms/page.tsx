@@ -1,5 +1,6 @@
 import Banner from "./components/Banners";
 import Hero from "./components/Hero";
+import JumpScare from "./components/JumpScare";
 import Navbar from "./components/Navbar";
 import Testimonials from "./components/PlayersComment";
 import RoomCards from "./components/RoomCards";
@@ -16,6 +17,7 @@ export default function EscapeRoomsPage() {
       <RoomCards />
       <Banner />
       <RoomCards />
+      <JumpScare triggerDelay={8000} autoTrigger={true} />
     </div>
   );
 }
