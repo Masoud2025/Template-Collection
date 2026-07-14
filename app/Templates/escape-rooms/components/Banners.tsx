@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Banner() {
   return (
-    <section className="w-full bg-white py-12 px-4">
+    <section className="w-full bg-white py-12 px-4 moraba-Font">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 gap-3 md:gap-6">
           {/* Banner 1 - گرادیانت آبی */}
