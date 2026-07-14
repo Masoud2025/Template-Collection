@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import room1 from "../assets/images/rooms/room1.jpg";
@@ -25,10 +25,9 @@ interface Room {
 
 export default function RoomCards() {
   const [hoveredId, setHoveredId] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   const rooms: Room[] = [
     {
@@ -129,61 +128,26 @@ export default function RoomCards() {
     }
   };
 
-  // Mouse drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setStartX(e.pageX - (scrollRef.current?.offsetLeft || 0));
-    setScrollLeft(scrollRef.current?.scrollLeft || 0);
+  const checkScrollButtons = () => {
     if (scrollRef.current) {
-      scrollRef.current.style.cursor = "grabbing";
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    if (scrollRef.current) {
-      const x = e.pageX - (scrollRef.current.offsetLeft || 0);
-      const walk = (x - startX) * 1.5;
-      scrollRef.current.scrollLeft = scrollLeft - walk;
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (container) {
+      checkScrollButtons();
+      container.addEventListener("scroll", checkScrollButtons);
+      window.addEventListener("resize", checkScrollButtons);
+      return () => {
+        container.removeEventListener("scroll", checkScrollButtons);
+        window.removeEventListener("resize", checkScrollButtons);
+      };
     }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    if (scrollRef.current) {
-      scrollRef.current.style.cursor = "grab";
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      if (scrollRef.current) {
-        scrollRef.current.style.cursor = "grab";
-      }
-    }
-  };
-
-  // Touch drag handlers for mobile
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].pageX - (scrollRef.current?.offsetLeft || 0));
-    setScrollLeft(scrollRef.current?.scrollLeft || 0);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    if (scrollRef.current) {
-      const x = e.touches[0].pageX - (scrollRef.current.offsetLeft || 0);
-      const walk = (x - startX) * 1.5;
-      scrollRef.current.scrollLeft = scrollLeft - walk;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
+  }, []);
 
   // Scroll buttons
   const scroll = (direction: "left" | "right") => {
@@ -197,7 +161,7 @@ export default function RoomCards() {
   };
 
   return (
-    <section className="w-full bg-gray-50 py-16 px-4 moraba-Font" id="rooms">
+    <section className="w-full bg-gray-50 py-16 px-4" id="rooms">
       <div className="max-w-7xl mx-auto">
         {/* Header with Navigation */}
         <div className="flex items-center justify-between mb-8">
@@ -208,13 +172,15 @@ export default function RoomCards() {
           <div className="flex gap-2">
             <button
               onClick={() => scroll("left")}
-              className="p-2 bg-white rounded-full shadow-md hover:shadow-lg transition hover:scale-105 border border-gray-200"
+              disabled={!canScrollLeft}
+              className="p-2 bg-white rounded-full shadow-md hover:shadow-lg transition hover:scale-105 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <ChevronRight size={20} className="text-gray-700" />
             </button>
             <button
               onClick={() => scroll("right")}
-              className="p-2 bg-white rounded-full shadow-md hover:shadow-lg transition hover:scale-105 border border-gray-200"
+              disabled={!canScrollRight}
+              className="p-2 bg-white rounded-full shadow-md hover:shadow-lg transition hover:scale-105 border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               <ChevronLeft size={20} className="text-gray-700" />
             </button>
@@ -226,28 +192,21 @@ export default function RoomCards() {
           ref={scrollRef}
           className="flex gap-4 overflow-x-auto scroll-smooth pb-4 hide-scrollbar cursor-grab active:cursor-grabbing select-none"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
           {rooms.map((room) => (
             <div
               key={room.id}
               className="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-shadow duration-300 border border-gray-100 flex-shrink-0 w-[220px] flex flex-col"
-              onMouseEnter={() => !isDragging && setHoveredId(room.id)}
-              onMouseLeave={() => !isDragging && setHoveredId(null)}
+              onMouseEnter={() => setHoveredId(room.id)}
+              onMouseLeave={() => setHoveredId(null)}
             >
-              {/* Image - بدون تغییر سایز */}
+              {/* Image */}
               <div className="relative w-full aspect-[2/3] overflow-hidden bg-gray-200 flex-shrink-0">
                 <Image
                   src={room.image}
                   alt={room.name}
                   fill
-                  className="object-cover pointer-events-none"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                   sizes="220px"
                 />
 
@@ -266,9 +225,9 @@ export default function RoomCards() {
                   {room.rating}
                 </div>
 
-                {/* Hover Info - روی عکس */}
+                {/* Hover Info */}
                 <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 transition-opacity duration-300 ${
-                  hoveredId === room.id && !isDragging ? "opacity-100" : "opacity-0"
+                  hoveredId === room.id ? "opacity-100" : "opacity-0"
                 }`}>
                   <p className="text-white text-sm text-center leading-relaxed line-clamp-4">
                     {room.description}
@@ -282,7 +241,7 @@ export default function RoomCards() {
                 </div>
               </div>
 
-              {/* Content - بدون تغییر */}
+              {/* Content */}
               <div className="p-2.5 flex flex-col flex-1">
                 <h3 className="text-sm font-bold text-gray-900 line-clamp-1 leading-tight">
                   {room.name}
