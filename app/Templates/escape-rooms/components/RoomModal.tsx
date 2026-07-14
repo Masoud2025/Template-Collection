@@ -38,6 +38,7 @@ export default function RoomModal({ room, isOpen, onClose }: RoomModalProps) {
       time: bookingData.time,
       players: bookingData.players,
       totalPrice: room.price * bookingData.players,
+      status: "pending",
     });
     
     setBookingResult(booking);
