@@ -20,6 +20,7 @@ export default function Navbar() {
     { name: "قوانین و مقررات", href: "#rules" },
     { name: "درباره ما", href: "#about" },
     { name: "وبلاگ", href: "#blog" },
+    { name: "ورود مدیریت", href: "/Templates/escape-rooms/admin/login" },
   ];
 
   const genres = [
