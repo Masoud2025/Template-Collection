@@ -1,16 +1,32 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { getBookings, updateBookingStatus, deleteBooking } from "../../../lib/escape-room/bookings";
 import { Booking } from "../../../types/escape-room/index";
 import { 
   Calendar, User, Phone, Mail, Clock, X, Check, 
   Search, Filter, TrendingUp, Users as UsersIcon,
   Clock as ClockIcon, CheckCircle, XCircle, AlertCircle,
-  ChevronLeft, ChevronRight, Download, Eye
+  ChevronLeft, ChevronRight, Download, Eye, LogOut
 } from "lucide-react";
 
 export default function AdminPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch("/Templates/escape-rooms/api/admin-auth")
+      .then((res) => {
+        if (!res.ok) router.replace("/Templates/escape-rooms/admin/login");
+      });
+  }, [router]);
+
+  const handleLogout = () => {
+    fetch("/Templates/escape-rooms/api/admin-auth", { method: "DELETE" }).then(() =>
+      router.replace("/Templates/escape-rooms/admin/login")
+    );
+  };
+
   const [bookings, setBookings] = useState<Booking[]>(() => getBookings());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -101,10 +117,19 @@ export default function AdminPage() {
               </h1>
               <p className="text-blue-100/80 mt-1">مدیریت و بررسی تمام رزروهای اتاق‌های فرار</p>
             </div>
-            <button className="px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-2xl font-bold transition-all duration-300 hover:scale-105 border border-white/30 flex items-center gap-2">
-              <Download size={18} />
-              خروجی گرفتن
-            </button>
+            <div className="flex items-center gap-3">
+              <button className="px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-2xl font-bold transition-all duration-300 hover:scale-105 border border-white/30 flex items-center gap-2">
+                <Download size={18} />
+                خروجی گرفتن
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-6 py-3 bg-rose-500/80 hover:bg-rose-500 backdrop-blur-sm text-white rounded-2xl font-bold transition-all duration-300 hover:scale-105 border border-white/30 flex items-center gap-2"
+              >
+                <LogOut size={18} />
+                خروج
+              </button>
+            </div>
           </div>
         </div>
 
