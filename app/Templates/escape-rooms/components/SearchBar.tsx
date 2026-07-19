@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, Users, Tag, Zap, X } from "lucide-react";
 
@@ -9,15 +9,11 @@ export default function SearchBar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [roomName, setRoomName] = useState("");
-  const [players, setPlayers] = useState("");
-  const [difficulty, setDifficulty] = useState("");
-
-  useEffect(() => {
-    setRoomName(searchParams.get("name") || "");
-    setPlayers(searchParams.get("players") || "");
-    setDifficulty(searchParams.get("difficulty") || "");
-  }, [searchParams]);
+  const [roomName, setRoomName] = useState(() => searchParams.get("name") || "");
+  const [players, setPlayers] = useState(() => searchParams.get("players") || "");
+  const [difficulty, setDifficulty] = useState(
+    () => searchParams.get("difficulty") || ""
+  );
 
   const applyFilters = (extra?: Record<string, string>) => {
     const params = new URLSearchParams();

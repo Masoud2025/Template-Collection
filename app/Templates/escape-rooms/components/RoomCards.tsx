@@ -60,7 +60,7 @@ export default function RoomCards({
       });
     }
     return result;
-  }, [genre, searchParams?.name, searchParams?.difficulty, searchParams?.players]);
+  }, [genre, searchParams]);
 
   // Effect for body scroll lock
   useEffect(() => {

@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
+import withSerwist from "@serwist/next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Bypass the built-in optimizer so remote posters load directly in the
-    // browser (no server-side fetch of images.unsplash.com required).
-    unoptimized: true,
+    unoptimized: true, // Keep this if you want to bypass Next.js image optimization (useful for external images)
     qualities: [25, 50, 75, 80, 90, 100],
     remotePatterns: [
       {
@@ -13,16 +12,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
-      // در صورت استفاده از دامنه‌های دیگر، آن‌ها را به همین شکل اضافه کنید
-      // مثال:
-      // {
-      //   protocol: "https",
-      //   hostname: "example.com",
-      //   port: "",
-      //   pathname: "/**",
-      // },
     ],
   },
 };
 
-export default nextConfig;
+// Wrap the config with Serwist
+export default withSerwist({
+  swSrc: "app/sw.ts",       // Path to your Service Worker source file
+  swDest: "public/sw.js",   // Output path for the built Service Worker
+})(nextConfig);
